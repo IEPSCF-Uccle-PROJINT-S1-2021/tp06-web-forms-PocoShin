@@ -1,0 +1,72 @@
+extends layout
+
+block content
+  h1= title
+
+  form(method="POST", action="")
+    .mb-3
+      label.form-label(for="book") Book:
+      select#book.form-select(
+        type="select",
+        placeholder="Select book",
+        name="book",
+        required="true"
+      )
+        - books.sort(function(a, b) {let textA = a.title.toUpperCase(); let textB = b.title.toUpperCase(); return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;});
+        each book in books
+          if bookinstance
+            option(
+              value=book.id,
+              selected=bookinstance.book.toString() === book.id.toString() ? 'selected' : false
+            ) #{book.title}
+          else
+            option(value=book.id) #{book.title}
+
+    .mb-3
+      label.form-label(for="imprint") Imprint:
+      input#imprint.form-control(
+        type="text",
+        placeholder="Publisher and date information",
+        name="imprint",
+        required="true",
+        value=undefined === bookinstance ? '' : bookinstance.imprint
+      )
+    .mb-3
+      label.form-label(for="due_back") Date when book available:
+      input#due_back.form-control(
+        type="date",
+        name="due_back",
+        value=undefined === bookinstance ? '' : bookinstance.due_back
+      )
+
+    .mb-3
+      label.form-label(for="status") Status:
+      select#status.form-select(
+        type="select",
+        placeholder="Select status",
+        name="status",
+        required="true"
+      )
+        option(
+          value="Maintenance",
+          selected=bookinstance && bookinstance.status === "Maintenance"
+        ) Maintenance
+        option(
+          value="Available",
+          selected=bookinstance && bookinstance.status === "Available"
+        ) Available
+        option(
+          value="Loaned",
+          selected=bookinstance && bookinstance.status === "Loaned"
+        ) Loaned
+        option(
+          value="Reserved",
+          selected=bookinstance && bookinstance.status === "Reserved"
+        ) Reserved
+
+    button.btn.btn-primary(type="submit") Submit
+
+  if errors
+    ul
+      each error in errors
+        li!= error.msg

@@ -1,0 +1,4 @@
+.vscode/
+config/mysql.json
+db_*.ps1
+node_modules/
