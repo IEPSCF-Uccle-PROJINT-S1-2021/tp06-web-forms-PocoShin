@@ -1,6 +1,7 @@
 const { Author, Book } = require("../models/sequelize");
 const createError = require("http-errors");
 const { body, validationResult } = require("express-validator");
+const author = require("../models/author");
 
 exports.author_list = async function (req, res, next) {
   try {
@@ -123,10 +124,71 @@ exports.author_delete_post = async function (req, res, next) {
 };
 
 // Display Author update form on GET.
-exports.author_update_get = function (req, res) {
-  res.send("NOT IMPLEMENTED: Author update GET");
+exports.author_update_get = async function (req, res, next) {
+  try {
+    const author = await Author.findByPk(req.params.id);
+    if (author === null) {
+      next(createError(404, "Author not found"));
+    } else {
+      res.render("author_form", { title: "Update Author", author });
+    }
+  } catch (error) {
+    next(error);
+  }
 };
 // Handle Author update on POST.
-exports.author_update_post = function (req, res) {
-  res.send("NOT IMPLEMENTED: Author update POST");
-};
+exports.author_update_post = [
+  body("first_name")
+    .trim()
+    .notEmpty()
+    .escape()
+    .withMessage("First name must be specified.")
+    .isAlphanumeric("fr-FR")
+    .withMessage("First name has non-alphanumeric characters."),
+  body("family_name")
+    .trim()
+    .notEmpty()
+    .escape()
+    .withMessage("Family name must be specified.")
+    .isAlphanumeric("fr-FR")
+    .withMessage("Family name has non-alphanumeric characters."),
+  body("date_of_birth", "Invalid date of birth")
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .toDate(),
+  body("date_of_death", "Invalid date of death")
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .toDate(),
+  async function (req, res, next) {
+    try {
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        res.render("author_form", {
+          title: "Update Author",
+          author: req.body,
+          errors: errors.array(),
+        });
+      } else {
+        const author = await Author.findByPk(req.params.id);
+        author.first_name = req.body.first_name;
+        author.family_name = req.body.family_name;
+        if (req.body.date_of_birth) {
+          author.date_of_birth = req.body.date_of_birth;
+        } else {
+          author.date_of_birth = null;
+        }
+        if (req.body.date_of_death) {
+          author.date_of_death = req.body.date_of_death;
+        } else {
+          author.date_of_death = null;
+        }
+        await author.save();
+        res.redirect(author.url);
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
+];
